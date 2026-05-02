@@ -1,19 +1,15 @@
 version: '3.8'
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: fcg-sqlserver
-    environment:
-      SA_PASSWORD: "FCG_Dev@2024"
-      ACCEPT_EULA: "Y"
-      MSSQL_PID: "Developer"
+  mongodb:
+    image: mongo:7
+    container_name: fcg-mongodb
     ports:
-      - "1433:1433"
+      - "27017:27017"
     volumes:
-      - sqlserver_data:/var/opt/mssql
+      - mongodb_data:/data/db
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "FCG_Dev@2024" -Q "SELECT 1" || exit 1
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -29,14 +25,16 @@ services:
       - "5001:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FiapCloudGames;User Id=SA;Password=FCG_Dev@2024;TrustServerCertificate=True;
+      - DatabaseProvider=MongoDB
+      - ConnectionStrings__DefaultConnection=mongodb://mongodb:27017
+      - MongoDB__DatabaseName=FiapCloudGames
       - Jwt__Secret=FCG_SUPER_SECRET_KEY_CHANGE_IN_PRODUCTION_32CHARS!
       - Jwt__Issuer=FiapCloudGames
       - Jwt__Audience=FiapCloudGamesUsers
       - Jwt__ExpirationHours=8
     depends_on:
-      sqlserver:
+      mongodb:
         condition: service_healthy
 
 volumes:
-  sqlserver_data:
+  mongodb_data:

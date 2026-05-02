@@ -74,10 +74,11 @@ builder.Services.AddControllers();
 var app = builder.Build();
 
 // ── Auto-migrate ──────────────────────────────────────────────────
-using (var scope = app.Services.CreateScope())
+if ((builder.Configuration["DatabaseProvider"] ?? "SQLite") != "MongoDB")
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    db.Database.EnsureCreated();
 }
 
 // ── Middleware ────────────────────────────────────────────────────

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: fcg-sqlserver
+    environment:
+      SA_PASSWORD: "FCG_Dev@2024"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "FCG_Dev@2024" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  fcg-api:
+    build:
+      context: .
+      dockerfile: src/FCG.API/Dockerfile
+    container_name: fcg-api
+    ports:
+      - "5000:8080"
+      - "5001:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=FiapCloudGames;User Id=SA;Password=FCG_Dev@2024;TrustServerCertificate=True;
+      - Jwt__Secret=FCG_SUPER_SECRET_KEY_CHANGE_IN_PRODUCTION_32CHARS!
+      - Jwt__Issuer=FiapCloudGames
+      - Jwt__Audience=FiapCloudGamesUsers
+      - Jwt__ExpirationHours=8
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+
+volumes:
+  sqlserver_data:

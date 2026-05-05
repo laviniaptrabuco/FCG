@@ -51,6 +51,11 @@ coverage/
 ## Docker
 .dockerignore
 
+## SQLite
+*.db
+*.db-shm
+*.db-wal
+
 ## OS
 .DS_Store
 Thumbs.db
